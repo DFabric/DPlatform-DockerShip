@@ -1,0 +1,10 @@
+# Ignore everything
+*
+
+# Except this
+!.git/
+!.gitignore
+!init.sh
+!dplatform.sh
+!LICENSE
+!README.md

@@ -107,40 +107,26 @@ case $ARCH in
 esac
 
 # Test if cuby responds
+printf "Obtaining the IPv4 address from http://ip4.cuby-hebergs.com...\n"
 IPv4=$(wget -qO- http://ip4.cuby-hebergs.com/ && sleep 1)
 # Else use this site
-[ "$IPv4" = "" ] && IPv4=$(wget -qO- ipv4.icanhazip.com && sleep 1)
+[ "$IPv4" = "" ] && printf "Can't retrieve the IPv4 from cuby-hebergs.com.\nTrying to obtaining the IPv4 address from ipv4.icanhazip.com...\n" && IPv4=$(wget -qO- ipv4.icanhazip.com && sleep 1)
 [ "$IPv4" = "" ] && printf ' /!\ WARNING - No Internet Connection /!\
-You have no internet connection. You can do everything but install new apps\n'
+You have no internet connection. You can do everything but install new containers\n'
 
 IPv6=$(ip addr | sed -e's/^.*inet6 \([^ ]*\)\/.*$/\1/;t;d' | tail -n 2 | head -n 1)
 [ $IPv6 = ::1 ] && IP=$IPv4 || IP=[$IPv6]
 
 LOCALIP=$(ip addr | grep 'inet' | grep -v inet6 | grep -vE '127\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | grep -o -E '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | head -1)
 
-change_hostname() {
-	printf "\033c\33[0;34m            Change your hostname\33[0m
-	Your hostname must contain only ASCII letters 'a' through 'z' (case-insensitive),
-	the digits '0' through '9', and the hyphen.
-	Hostname labels cannot begin or end with a hyphen.
-	No other symbols, punctuation characters, or blank spaces are permitted.
-	Please enter a hostname (actual: $(hostname)):\n"
-	read hostname
-	if [ "$hostame" != "" ] ;then
-		printf "$hostname\n" > /etc/hostname
-		sed -i "s/ $($hostname) / $hostname /g" /etc/hosts
-		ssm "You need to reboot to apply the hostname change." "Reboot now?
-    no
-    yes"
-		[ $lchoice = 2 ] && reboot
-	fi
-  menu
+wait_enter() {
+  printf "Press \33[1;31mEnter <-'\33[0m to continue\n" && read null
 }
 
 port() {
 	printf "\033c  	$APP port
 	Set a port number for $APP
-	Default: $1"
+	Default: $1 "
 	read port
 	[ "$port" = "" ] && port=$1
 }
@@ -159,6 +145,25 @@ secret() {
 	printf "\033c	 $1 database secret
 	Set a secret password for the $1 database\n"
 	read secret
+}
+
+change_hostname() {
+	printf "\033c\33[0;34m            Change your hostname\33[0m
+	Your hostname must contain only ASCII letters 'a' through 'z' (case-insensitive),
+	the digits '0' through '9', and the hyphen.
+	Hostname labels cannot begin or end with a hyphen.
+	No other symbols, punctuation characters, or blank spaces are permitted.
+	Please enter a hostname (actual: $(hostname)):\n"
+	read hostname
+	if [ "$hostame" != "" ] ;then
+		printf "$hostname\n" > /etc/hostname
+		sed -i "s/ $($hostname) / $hostname /g" /etc/hosts
+		ssm "You need to reboot to apply the hostname change." "  Reboot now?
+    no
+    yes"
+		[ $lchoice = 2 ] && reboot
+	fi
+  menu
 }
 
 # Applications menus
@@ -226,6 +231,7 @@ install_menu() {
 							esac;;
 					esac;;
 			esac
+      menu
 }
 
 # Docker Compose installation
@@ -257,14 +263,14 @@ docker_compose() {
 # container manager menu
 container_config(){
 
-  ssm "\33[0;34m       $container_choice container setup\33[0m
+  ssm "\33[0;34m       $container_choice — $container_choice_name ($container_image) container setup\33[0m
   Running: $(docker inspect --format "{{ .State.Running }}" $container_choice)
   Auto-start at boot:" "
   Start/Stop the current $container_choice container process
 	Udate container configuration - restart/cpu policy
 	Backup the container with its volume data
 	Delete the container with its volume data
-	Status details about the current container status
+	Status details about the current container
 	Open a Bash shell to the container
   Return to menu" "    "
   container_action=$linenb
@@ -299,21 +305,21 @@ container_config(){
 					unless-stopped | Change the restart policy" "	"
           restart_choice=${lchoice% |*}
 					[ $restart_choice = on-failure ] && printf " --restart=on-failure\n You can also set an optional maximum restart count (e.g. on-failure:5)\n You can write an optional number" && read count && [ $count != "" ] && restart_choice=$restart_choice:$count
-					[ $restart_choice != "" ] && docker update $container_choice --restart=$restart_choice && printf "Press Enter <-'\n" && read null;;
-				3) printf "Available soon\nPress Enter <-'"; read null;;
-				4) printf "Available soon\nPress Enter <-'"; read null;;
+					[ $restart_choice != "" ] && docker update $container_choice --restart=$restart_choice && wait_enter;;
+				3) printf "Available soon\n"; wait_enter;;
+				4) printf "Available soon\n"; wait_enter;;
 			esac;;
 
-		3) printf "Available soon\nPress Enter <-'"; read null;;
+		3) docker export --message="$container_choice exported to $container_choice_name-bak.tar" $container_choice > $container_choice_name-bak.tar; wait_enter;;
 
-		4) ssm "Remove $container_choice
+		4) ssm "Remove $container_choice ($container_choice_name)
       $container_choice will be removed with its volumes" "Are you sure to want to continue?
       no
       yes" "  "
-			[ $linenb = 2 ] && docker rm -f -v $container_choice
-			printf "$container_choice removed with its volumes\n";;
+			[ $linenb = 2 ] && docker rm -f -v $container_choice && printf "$container_choice ($container_choice_name) removed with its volumes\n"
+      wait_enter; container_manager;;
 
-    5) printf "Available soon\nPress Enter <-'"; read null;;
+    5) printf "Available soon\n"; wait_enter;;
 
 		6) docker exec -it $container_choice bash;;
 
@@ -328,13 +334,14 @@ container_detection() {
 	for container in $(docker ps -aq); do
 		container_name=$(docker inspect --format='{{.Name}}' $container)
 		container_name=${container_name#/}
-    container_list="$container_list\n$container $container_name"
+    container_image=$(docker inspect --format='{{.Config.Image}}' $container)
+    container_list="$container_list\n$container — $container_name ($container_image)"
 	done
 }
 
 container_manager() {
 	# Main Container Manager menu
-  lchoice="Return to menu"
+  lchoice="Return to menu     "
 
   container_detection
   used_memory=$(free -m | awk '/Mem/ {printf "%.2g\n", (($3+$5)/1000)}')
@@ -344,10 +351,13 @@ container_manager() {
   Select with Arrows <-v-> and/or Tab <=>
   Memory usage: $used_memory GiB used / $total_memory GiB total" "
   Return to menu
+  Import a container from a tarball
   $container_list"
-  container_choice=${lchoice% *}
-  [ "$container_choice" != "Return to" ] || menu
-  [ "$container_choice" = "Docker global status" ] && printf "\033c$(docker ps)\nPress Enter <-'\n" && read null && container_manager || container_config
+  container_choice=${lchoice%% *}
+  container_choice_name=$(docker inspect --format='{{.Name}}' $container_choice)
+  [ "$container_choice" != "Return" ] || menu
+  [ "$container_choice" = "Import" ] && printf "Write the path of your container tarball\n" && read path && docker import $path
+  [ "$container_choice" = "Docker" ] && printf "\033c$(docker ps)\nPress Enter <-'\n" && read null && container_manager || container_config
   container_detection
 }
 
@@ -358,8 +368,8 @@ cleanup() {
 	Stopped containers | Delete all stopped containers with its related volumes" " "
 	case $linenb in
     1) ;; # Return to menu
-		2) docker volume rm $(docker volume ls -qf dangling=true); printf "Press Enter < -'\n"; read null;;
-		3) docker rm -v $(docker ps -a -q);  printf "Press Enter < -'\n"; read null;;
+		2) docker volume rm $(docker volume ls -qf dangling=true); wait_enter;;
+		3) docker rm -v $(docker ps -a -q);  wait_enter;;
 	esac
   menu
 }

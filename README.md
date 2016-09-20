@@ -1,8 +1,12 @@
 # DPlatform (alpha) - Docker version
 
-[![Docker deploy](https://raw.githubusercontent.com/DFabric/DPlatform-DockerShip/gh-pages/img/deploy-docker.png)](https://dfabric.github.io/DPlatform-DockerShip)
+[![DP Docker](https://raw.githubusercontent.com/DFabric/DPlatform-DockerShip/gh-pages/img/deploy-docker.png)](https://dfabric.github.io/DPlatform-DockerShip)
 
-### check out [browser-tools.net](https://browser-tools.net)! In-browser, offline standalone and statically servable web tool set.
+### Try [DPlatform-DockerShell](https://github.com/DFabric/DPlatform-ShellCore) - The bare metal version of DPlatform!
+
+[![DP Shell](https://raw.githubusercontent.com/DFabric/DPlatform-ShellCore/gh-pages/img/deploy.png)](https://dfabric.github.io/DPlatform-ShellCore)
+
+### Check out [browser-tools.net](https://browser-tools.net)! In-browser, offline standalone and statically servable web tool set.
 
 ![DP logo](https://dfabric.github.io/DPlatform-ShellCore/img/logo.svg)
 **DPlatform** helps you to easily install containers and manage them.
@@ -11,9 +15,11 @@
 ![menu](https://raw.githubusercontent.com/DFabric/DPlatform-DockerShip/gh-pages/img/menu.png)
 ![setup](https://raw.githubusercontent.com/DFabric/DPlatform-DockerShip/gh-pages/img/setup.png)
 
+*Use of [Simple Shell Menu](https://github.com/j8r/SimpleShellMenu) for the menus*
+
 ## Features
 - Install docker containers easily
-- Manage Apps Services - container services integration: view container status, one click start/stop, auto-start at boot and auto-restart if down unexpectively
+- Manage Container Services - View container status, one click start/stop, auto-start at boot and auto-restart if down unexpectively
 - Update/Remove installed container simply with two clicks
 - Change your hostname
 - Determine your IPv4, IPv6, LocalIP and your hostname
@@ -31,7 +37,7 @@
 ## Installation
 To begin with DPlatform Docker, the best way is to clone the repository and run this command to be able to have auto-updates:
 
-` git clone -b master --single-branch https://github.com/DFabric/DPlatform-DockerShip; cd DPlatform-Dockership; sudo sh dplatform.sh`
+` git clone -b master --single-branch https://github.com/DFabric/DPlatform-DockerShip; sh DPlatform-Dockership/dplatform.sh`
 
 You can also:
 
@@ -44,8 +50,7 @@ or
 `curl -O https://raw.githubusercontent.com/DFabric/DPlatform-ShellCore/master/dplatform.sh; sudo sh dplatform.sh`
 
 ## Requirements
-
-Any system/architecure supported by Docker, including GNU/Linux, macOSX, Windows.
+Any system/architecure supported by Docker, including GNU/Linux, macOS, Windows.
 
 Development is still active. Most things should work, but problems could occur, more testing is needed.
 Please feel free to open an issue and create a pull request, all contributions are welcome!
