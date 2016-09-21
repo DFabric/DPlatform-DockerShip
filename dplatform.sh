@@ -8,10 +8,10 @@
 # and probably other distros of the same families, although no support is offered for them.
 
 end="\33[0m"
-# Blod red text color
+# White text color
 cl="\33[0;37m"
-# White selectioned color
-sl="\33[1;31m"
+# Bold Yellow selectioned color
+sl="\33[0;34m"
 
 get_key() {
   stty_state=$(stty -g)
@@ -195,7 +195,13 @@ install_menu() {
           tobegit3hub/seagull) port 10086; network
             docker run -d -p $URL$port:10086 -v /var/run/docker.sock:/var/run/docker.sock tobegit3hub/seagull;;
 
-						rocket.chat) port 3000; network
+						rocket.chat) port 3000
+            printf "\033c	 $APP network access
+            Leave blank to expose the service to the world (0.0.0.0)
+            For local network access only: $LOCALIP
+            For local access only: localhost\n"
+            read URL
+            [ "$URL" = "" ] && URL=0.0.0.0
 						printf "\033c   Set your MongoDB instance URL
 	If you have a MongoDB database, you can enter its URL and use it.
 	You can also use a MongoDB service provider on the Internet.
@@ -208,7 +214,9 @@ install_menu() {
 								"") docker run --name db -d mongo:3 --smallfiles
 									docker run --name rocketchat -p $port:3000 --env ROOT_URL=http://$URL --link db -d rocket.chat;;
 								*) docker run --name rocketchat -p $port:3000 --env ROOT_URL=http://$URL --env MONGO_URL=$MONGO_URL -d rocket.chat;;
-							esac;;
+							esac
+              printf "    Open \33[0;34mhttp://$URL:$port\33[0m\33[1;31m in your browser and register.\n    The first users to register will be promoted to administrator.\33[0m\n"
+              wait_enter;;
 
 						ghost) port 8080
 							docker run --name ghost-blog -p $port:2368 -d ghost;;
@@ -357,7 +365,7 @@ container_manager() {
   container_choice_name=$(docker inspect --format='{{.Name}}' $container_choice)
   [ "$container_choice" != "Return" ] || menu
   [ "$container_choice" = "Import" ] && printf "Write the path of your container tarball\n" && read path && docker import $path
-  [ "$container_choice" = "Docker" ] && printf "\033c$(docker ps)\nPress Enter <-'\n" && read null && container_manager || container_config
+  [ "$container_choice" = "Docker" ] && printf "\033c$(docker ps -a)\nPress Enter <-'\n" && read null && container_manager || container_config
   container_detection
 }
 
