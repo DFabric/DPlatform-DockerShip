@@ -37,7 +37,7 @@
 ## Installation
 To begin with DPlatform Docker, the best way is to clone the repository and run this command to be able to have auto-updates:
 
-` git clone -b master --single-branch https://github.com/DFabric/DPlatform-DockerShip; sh DPlatform-Dockership/dplatform.sh`
+` git clone -b master --single-branch https://github.com/DFabric/DPlatform-DockerShip; sh DPlatform-DockerShip/dplatform.sh`
 
 You can also:
 
