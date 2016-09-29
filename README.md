@@ -30,6 +30,7 @@
 - [ui-for-docker](https://github.com/kevana/ui-for-docker) - A pure client-side web interface for the Docker Remote API to connect and manage docker
 - [seagull](https://github.com/tobegit3hub/seagull) - Friendly Web UI to manage and monitor docker
 - [Rocket.Chat](https://rocket.chat/) - The Ultimate Open Source WebChat Platform
+- [Gogs](https://gogs.io/) - Gogs(Go Git Service), a painless self-hosted Git Service
 - [Ghost](https://ghost.org/) - Simple and powerful blogging/publishing platform
 - [WordPress](https://wordpress.org/) - Web software you can use to create a beautiful website, blog, or app
 - [Redmine](https://redmine.org/) - Flexible project management web application

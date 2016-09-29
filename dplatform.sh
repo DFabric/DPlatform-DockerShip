@@ -132,13 +132,16 @@ port() {
 }
 
 network() {
-	URL=
-	printf "\033c	 $APP network access
-	Leave blank to expose the service to the world
-	For local network access only: $LOCALIP
-	For local access only: localhost\n"
-	read URL
-	[ "$URL" != "" ] && URL=$URL:
+  ssm "\033c	 $APP network access
+    Select a configuration you would like to update" "
+    Expose the service to the world
+    Local network access only ($LOCALIP)
+    Local access only (localhost)"
+    case $ssm_line in
+      1) URL=;;
+      2) URL=$LOCALIP:;;
+      3) URL=127.0.0.1:;;
+    esac;;
 }
 
 secret() {
@@ -171,13 +174,16 @@ install_menu() {
 
   # Installation menu
   ssm "                 DPlatform - Installation menu
-  What container would you like to deploy? " "
+  What container would you like to deploy?
+  Note that all applications have x86_64 (amd64) containers
+  \33[1;31m[arm*]\33[0;0m indicate that the applicaiton have also an ARM* (Raspberry Pi) container" "
   Return to menu
   uifd/ui-for-docker | A pure client-side web interface for the Docker Remote API to connect and manage docker
-  tobegit3hub/seagull | Friendly Web UI to manage and monitor docker
-  rocket.chat | The Ultimate Open Source WebChat Platform
-  ghost | Simple and powerful blogging/publishing platform
-  wordpress | Create a beautiful website, blog, or app
+  tobegit3hub/Seagull | Friendly Web UI to manage and monitor docker
+  Rocket.Chat | The Ultimate Open Source WebChat Platform
+  Gogs | Gogs(Go Git Service), a painless self-hosted Git Service \33[1;31m[armv7]\33[0;0m
+  Ghost | Simple and powerful blogging/publishing platform
+  Wordpress | Create a beautiful website, blog, or app
   Redmine | Flexible project management web application" "	"
   APP=${ssm_text% |*}
 
@@ -191,42 +197,77 @@ install_menu() {
       2)
       case $APP in
         uifd/ui-for-docker) port 9000; network
-          docker run -d -p $URL$port:9000 --privileged -v /var/run/docker.sock:/var/run/docker.sock uifd/ui-for-docker;;
+          docker run -d -p $URL$port:9000 --privileged -v /var/run/docker.sock:/var/run/docker.sock uifd/ui-for-docker
+          URL=${URL%:}
+          printf "
+              ui-for-docker installed!
+          Open \33[0;32mhttp://$URL:$port\33[0m\33[0;37m in your browser\n"
+          wait_enter;;
 
-        tobegit3hub/seagull) port 10086; network
-          docker run -d -p $URL$port:10086 -v /var/run/docker.sock:/var/run/docker.sock tobegit3hub/seagull;;
+        tobegit3hub/Seagull) port 10086; network
+          docker run -d -p $URL$port:10086 -v /var/run/docker.sock:/var/run/docker.sock tobegit3hub/seagull
+          URL=${URL%:}
+          printf "
+              Seagull installed!
+          Open \33[0;32mhttp://$URL:$port\33[0m\33[0;37m in your browser\n"
+          wait_enter;;
 
-        rocket.chat) port 3000
-          printf "\033c	 $APP network access
-          Leave blank to expose the service to the world (0.0.0.0)
-          For local network access only: $LOCALIP
-          For local access only: localhost\n"
-          read URL
-          [ "$URL" = "" ] && URL=0.0.0.0
+        Rocket.Chat) port 3000
+          ssm "\033c    $APP network access
+            Select a configuration you would like to update" "
+            Expose the service to the world (0.0.0.0)
+            Local network access only ($LOCALIP)
+            Local access only (localhost)"
+          case $ssm_line in
+            1) URL=0.0.0.0;;
+            2) URL=$LOCALIP:;;
+            3) URL=127.0.0.1:;;
+          esac;;
   				printf "\033c     Set your MongoDB instance URL
   If you have a MongoDB database, you can enter its URL and use it.
   You can also use a MongoDB service provider on the Internet.
   You can use a free https://mongolab.com/ database.
   Enter your Mongo URL instance (with the brackets removed)
   mongodb://:{user}:{password}@{host}:{port}/{datalink}
-  >> BLANK to use a MongoDB container locally. <<\n"
+  >> BLANK to use a MongoDB container locally <<\n"
         read MONGO_URL
         case "$MONGO_URL" in
           "") docker run --name db -d mongo:3 --smallfiles
             docker run --name rocketchat -p $port:3000 --env ROOT_URL=http://$URL --link db -d rocket.chat;;
           *) docker run --name rocketchat -p $port:3000 --env ROOT_URL=http://$URL --env MONGO_URL=$MONGO_URL -d rocket.chat;;
         esac
-        printf "    Open \33[0;32mhttp://$URL:$port\33[0m\33[0;37m in your browser and register.\n    The first users to register will be promoted to administrator.\33[0m\n"
+        printf "
+            Rocket.Chat installed!
+        Open \33[0;32mhttp://$URL:$port\33[0m\33[0;37m in your browser and register.\n    The first users to register will be promoted to administrator.\n"
         wait_enter;;
 
-        ghost) port 8080
-          docker run --name ghost-blog -p $port:2368 -d ghost;;
+        Gogs) port 3000
+          # Create local directory for volume.
+          mkdir -p /var/gogs
 
-        wordpress) port 8080
+          [ $ARCHf = arm ] && gogs=gogs-rpi || gogs=gogs
+          docker run --name=gogs -p 10022:22 -p 10080:3000 -v /var/gogs:/data gogs/$gogs
+          printf "
+              Gogs installed!
+          Open \33[0;32mhttp://$LOCALIP:$port\33[0m\33[0;37m in your browser\n"
+          wait_enter;;
+
+        Ghost) port 8080
+          docker run --name ghost-blog -p $port:2368 -d ghost
+          printf "
+              Ghost installed!
+          Open \33[0;32mhttp://$LOCALIP:$port\33[0m\33[0;37m in your browser\n"
+          wait_enter;;
+
+        Wordpress) port 8080
           docker run --name wordpressdb -e MYSQL_ROOT_PASSWORD=$secret -e MYSQL_DATABASE=wordpress -d mariadb
-          docker run --name wordpress --link wordpressdb:mysql -p $port:80 -d wordpress;;
+          docker run --name wordpress --link wordpressdb:mysql -p $port:80 -d wordpress
+          printf "
+              Wordpress installed!
+          Open \33[0;32mhttp://$LOCALIP:$port\33[0m\33[0;37m in your browser\n"
+          wait_enter;;
 
-        redmine)
+        Redmine)
           ssm "Redmine databse" "What database do you want to use?
           PostgreSQL | Recommened way
           MySQL | Recommended way
@@ -237,7 +278,11 @@ install_menu() {
             2) docker run -d --name redmine-mysql -e MYSQL_ROOT_PASSWORD=$secret -e MYSQL_DATABASE=redmine mariadb
               docker run -d -p $port:3000 --name redmine --link redmine-mysql:mysql redmine;;
             3) docker run -d -p $port:3000 --name redmine redmine;;
-          esac;;
+          esac
+          printf "
+              Redmine installed!
+          Open \33[0;32mhttp://$LOCALIP:$port\33[0m\33[0;37m in your browser\n"
+          wait_enter;;
         esac;;
       esac
     fi
@@ -424,7 +469,7 @@ menu() {
   ssm "\33[0;32m		DPlatform - Main menu
   Select with arrows <-v-> and Tab <=>. Confirm with Enter <-'. Exit with Q/Esc
   Your can access to your apps by opening this address in your browser:
-  \33[0m\33[1;35m		>| http://hostname(:port) |<\33[0m" "
+  \33[0m\33[1;35m		>| http://$LOCALIP(:port) |<\33[0m" "
   Install new containers
   Container Manager | Manage/remove containers
   Image Manager | Manage/remove images
