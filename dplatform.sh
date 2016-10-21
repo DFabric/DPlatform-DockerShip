@@ -108,10 +108,10 @@ esac
 
 # Test if cuby responds
 printf "Obtaining the IPv4 address from http://ip4.cuby-hebergs.com...\n"
-IPv4=$(wget -qO- http://ip4.cuby-hebergs.com/ && sleep 1)
+IPv4=$(wget -qO- http://ip4.cuby-hebergs.com/ && sleep 1) && printf "done.\n\n" || printf "failed.\n\n"
 # Else use this site
-[ "$IPv4" = "" ] && printf "Can't retrieve the IPv4 from cuby-hebergs.com.\nTrying to obtaining the IPv4 address from ipv4.icanhazip.com...\n" && IPv4=$(wget -qO- ipv4.icanhazip.com && sleep 1)
-[ "$IPv4" = "" ] && printf ' /!\ WARNING - No Internet Connection /!\
+[ "$IPv4" = "" ] && { printf "Can't retrieve the IPv4 from cuby-hebergs.com.\nTrying to obtaining the IPv4 address from ipv4.icanhazip.com...\n" && IPv4=$(wget -qO- ipv4.icanhazip.com && sleep 1) && printf "done.\n\n" || printf "failed.\n\n"; }
+nc -z g.co 80 || printf '     /!\ WARNING - No Internet Connection /!\
 You have no internet connection. You can do everything but install new containers\n'
 
 IPv6=$(ip addr | sed -e's/^.*inet6 \([^ ]*\)\/.*$/\1/;t;d' | tail -n 2 | head -n 1)
@@ -141,7 +141,7 @@ network() {
       1) URL=;;
       2) URL=$LOCALIP:;;
       3) URL=127.0.0.1:;;
-    esac;;
+    esac
 }
 
 secret() {
@@ -222,7 +222,7 @@ install_menu() {
             1) URL=0.0.0.0;;
             2) URL=$LOCALIP:;;
             3) URL=127.0.0.1:;;
-          esac;;
+          esac
   				printf "\033c     Set your MongoDB instance URL
   If you have a MongoDB database, you can enter its URL and use it.
   You can also use a MongoDB service provider on the Internet.
@@ -413,7 +413,7 @@ container_manager() {
   container_choice_name=$(docker inspect --format='{{.Name}}' $container_choice)
   [ "$container_choice" = "Import" ] && printf "Write the path of your container tarball\n" && read path && docker import $path
   [ "$container_choice" = "Docker" ] && printf "\033c$(docker ps -a)" && wait_enter && container_manager
-  if [ "$container_choice" = "Return" ] ;then
+  if [ "$container_choice" = "Return" ] || [ "$container_choice" = "Container" ];then
     menu
   else
     container_config
@@ -432,13 +432,16 @@ image_detection() {
 
 image_manager() {
   image_detection
+  used_memory=$(free -m | awk '/Mem/ {printf "%.2g\n", (($3+$5)/1000)}')
+  total_memory=$(free -m | awk '/Mem/ {printf "%.2g\n", ($2/1000)}')
+
   ssm "Container Manager
   Select with Arrows <-v-> and/or Tab <=>
   Memory usage: $used_memory GiB used / $total_memory GiB total" "
   Return to menu$image_list"
   image_choice=${ssm_text%% *}
   image_choice_name=$(docker inspect --format='{{.Name}}' $image_choice)
-  if [ "$image_choice" = "Return" ] ;then
+  if [ "$image_choice" = "Return" ] || [ "$image_choice" = "Image" ] ;then
     menu
   else
     ssm "Remove $image_choice ($image_choice_name)
