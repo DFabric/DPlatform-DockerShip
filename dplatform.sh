@@ -37,7 +37,7 @@ ssm() {
   total="-1"
   printf "\033c$1\n"
   while read line ;do
-    [ $total = 0 ] && printf "$3$sl$line$end\n" || printf "$3$cl$line$end\n"
+    [ $total = 0 ] && printf "$3$sl$line$end\n" && ssm_text=$line || printf "$3$cl$line$end\n"
     total=$(( total + 1 ))
   done <<E
   $(printf "$2\n")
@@ -47,7 +47,7 @@ E
 		printf "\033c$1\n"
     i=
     while read line ;do
-      [ "$i" = $ssm_line ] && printf "$3$sl$line$end\n"  && ssm_text=$line || printf "$3$cl$line$end\n"
+      [ "$i" = $ssm_line ] && printf "$3$sl$line$end\n" && ssm_text=$line || printf "$3$cl$line$end\n"
       i=$(( i + 1 ))
     done <<E
     $(printf "$2")
@@ -111,7 +111,9 @@ printf "Obtaining the IPv4 address from http://ip4.cuby-hebergs.com...\n"
 IPv4=$(wget -qO- http://ip4.cuby-hebergs.com/ && sleep 1) && printf "done.\n\n" || printf "failed.\n\n"
 # Else use this site
 [ "$IPv4" = "" ] && { printf "Can't retrieve the IPv4 from cuby-hebergs.com.\nTrying to obtaining the IPv4 address from ipv4.icanhazip.com...\n" && IPv4=$(wget -qO- ipv4.icanhazip.com && sleep 1) && printf "done.\n\n" || printf "failed.\n\n"; }
-nc -z g.co 80 || printf '     /!\ WARNING - No Internet Connection /!\
+
+# Check Internet availability
+ping -c 1 g.co >/dev/null 2>&1 || printf '     /!\ WARNING - No Internet Connection /!\
 You have no internet connection. You can do everything but install new containers\n'
 
 IPv6=$(ip addr | sed -e's/^.*inet6 \([^ ]*\)\/.*$/\1/;t;d' | tail -n 2 | head -n 1)
@@ -183,12 +185,13 @@ install_menu() {
   Rocket.Chat | The Ultimate Open Source WebChat Platform
   Gogs | Gogs(Go Git Service), a painless self-hosted Git Service \33[1;31m[armv7]\33[0;0m
   Ghost | Simple and powerful blogging/publishing platform
+  OwnCloud | Access & share your files, calendars, contacts, mail
   Wordpress | Create a beautiful website, blog, or app
   Redmine | Flexible project management web application" "	"
-  APP=${ssm_text% |*}
 
   # Confirmation message
-  if [ "$APP" != "Return to menu" ] ;then
+  if [ "$ssm_text" != "Return to menu" ] ;then
+    APP=${ssm_text% |*}
     ssm "		$APP will be installed." "Are you sure to want to continue?
     no
     yes" "	" || menu # Return to menu
@@ -241,7 +244,8 @@ install_menu() {
         Open \33[0;32mhttp://$URL:$port\33[0m\33[0;37m in your browser and register.\n    The first users to register will be promoted to administrator.\n"
         wait_enter;;
 
-        Gogs) port 3000
+        Gogs) # https://github.com/gogits/gogs/tree/master/docker
+          port 3000
           # Create local directory for volume.
           mkdir -p /var/gogs
 
@@ -258,6 +262,12 @@ install_menu() {
               Ghost installed!
           Open \33[0;32mhttp://$LOCALIP:$port\33[0m\33[0;37m in your browser\n"
           wait_enter;;
+
+        OwnCloud) port 80
+        docker run --name owncloud -p $port:80 -d owncloud
+        printf "
+            OwnCloud installed!
+        Open \33[0;32mhttp://$LOCALIP:$port/owncloud\33[0m\33[0;37m in your browser\n";;
 
         Wordpress) port 8080
           docker run --name wordpressdb -e MYSQL_ROOT_PASSWORD=$secret -e MYSQL_DATABASE=wordpress -d mariadb
@@ -441,14 +451,14 @@ image_manager() {
   Return to menu$image_list"
   image_choice=${ssm_text%% *}
   image_choice_name=$(docker inspect --format='{{.Name}}' $image_choice)
-  if [ "$image_choice" = "Return" ] || [ "$image_choice" = "Image" ] ;then
+  if [ "$image_choice" = "Return" ] ;then
     menu
   else
     ssm "Remove $image_choice ($image_choice_name)
     $image_choice will be removed" "Are you sure to want to continue?
     yes
     no" "  "
-    [ $ssm_line = 1 ] && docker rmi $image_choice && printf "\n$image_choice ($container_choice_name) removed\n"
+    [ $ssm_line = 1 ] && docker rmi -f $image_choice && printf "\n$image_choice ($container_choice_name) removed\n"
     wait_enter
     image_manager
   fi

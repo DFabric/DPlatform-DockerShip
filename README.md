@@ -32,6 +32,7 @@
 - [Rocket.Chat](https://rocket.chat/) - The Ultimate Open Source WebChat Platform
 - [Gogs](https://gogs.io/) - Gogs(Go Git Service), a painless self-hosted Git Service
 - [Ghost](https://ghost.org/) - Simple and powerful blogging/publishing platform
+- [OwnCloud](https://owncloud.org/) - Access & share your files, calendars, contacts, mail & more from any device, on your terms
 - [WordPress](https://wordpress.org/) - Web software you can use to create a beautiful website, blog, or app
 - [Redmine](https://redmine.org/) - Flexible project management web application
 
