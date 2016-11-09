@@ -57,7 +57,7 @@ E
 
 # DPlatform Docker
 
-[ $(id -u) != 0 ] && printf "\033c\33[1;31m        You don't run this as root\33[0m
+[ $(id -u) != 0 ] && printf "\033c\33[1;31m        You don't run this as root!\33[0m
     You will need to have root permissions
     Press Enter <-'\n" && read null
 
@@ -106,6 +106,11 @@ case $ARCH in
 	*) printf "Your architecture $ARCH isn't supported\n"
 esac
 
+# Check if systemd is the init system
+[ "$(docker ps 2>/dev/null)" = "" ] && printf '     /!\ WARNING - systemd services not available /!\
+The docker daemon is not actually active. Start it first before0running this script
+On systemd systems: systemctl start docker\n' && exit 1
+
 # Test if cuby responds
 printf "Obtaining the IPv4 address from http://ip4.cuby-hebergs.com...\n"
 IPv4=$(wget -qO- http://ip4.cuby-hebergs.com/ && sleep 1) && printf "done.\n\n" || printf "failed.\n\n"
@@ -142,7 +147,7 @@ network() {
     case $ssm_line in
       1) URL=;;
       2) URL=$LOCALIP:;;
-      3) URL=127.0.0.1:;;
+      3) URL=localhost:;;
     esac
 }
 
@@ -224,7 +229,7 @@ install_menu() {
           case $ssm_line in
             1) URL=0.0.0.0;;
             2) URL=$LOCALIP:;;
-            3) URL=127.0.0.1:;;
+            3) URL=localhost:;;
           esac
   				printf "\033c     Set your MongoDB instance URL
   If you have a MongoDB database, you can enter its URL and use it.
@@ -239,6 +244,7 @@ install_menu() {
             docker run --name rocketchat -p $port:3000 --env ROOT_URL=http://$URL --link db -d rocket.chat;;
           *) docker run --name rocketchat -p $port:3000 --env ROOT_URL=http://$URL --env MONGO_URL=$MONGO_URL -d rocket.chat;;
         esac
+        [ "$URL" = "0.0.0.0" ] && URL=localhost
         printf "
             Rocket.Chat installed!
         Open \33[0;32mhttp://$URL:$port\33[0m\33[0;37m in your browser and register.\n    The first users to register will be promoted to administrator.\n"
