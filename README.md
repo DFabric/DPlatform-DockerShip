@@ -52,7 +52,7 @@ or
 `curl -O https://raw.githubusercontent.com/DFabric/DPlatform-ShellCore/master/dplatform.sh; sudo sh dplatform.sh`
 
 ## Requirements
-Any system/architecure supported by Docker, including GNU/Linux, macOS, Windows.
+Any system/architecture supported by Docker, including GNU/Linux, macOS, Windows.
 
 Development is still active. Most things should work, but problems could occur, more testing is needed.
 Please feel free to open an issue and create a pull request, all contributions are welcome!

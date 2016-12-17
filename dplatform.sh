@@ -57,7 +57,7 @@ E
 
 # DPlatform Docker
 
-[ $(id -u) != 0 ] && printf "\033c\33[1;31m        You don't run this as root!\33[0m
+[ -z "$(id | grep docker)" ] && [ $(id -u) != 0 ] && printf "\033c\33[1;31m        You don't run this as root!\33[0m
     You will need to have root permissions
     Press Enter <-'\n" && read null
 
@@ -517,7 +517,7 @@ menu() {
   Press Enter <-'\n"
   read null
   menu;;
-    6) exit 0;; # Exit
+    *) exit 0;; # Exit
   esac
 }
 menu
