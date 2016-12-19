@@ -96,7 +96,7 @@ fi
 hash docker 2>/dev/null || { [ ! $ARCH = 86 ] && [ $ARCH != arm64 ] && { wget -qO- https://get.docker.com/ | sh || curl -sSL https://get.docker.com/ | sh; } || $install docker.io || $install docker; }
 
 # Detect architecture
-ARCH=$(arch)
+ARCH=$(uname -m)
 case $ARCH in
 	x86_64) ARCHf=x86; ARCH=amd64;;
 	i*86) ARCHf=x86; ARCH=86;;
@@ -334,15 +334,14 @@ docker_compose() {
 # container manager menu
 container_config(){
 
-  ssm "\33[0;32m       $container_choice — $container_choice_name ($container_image) container setup\33[0m
-  Running: $(docker inspect --format "{{ .State.Running }}" $container_choice)
-  Auto-start at boot:" "
-  Start/Stop the current $container_choice container process
+	ssm "\33[0;32m       $container_choice — $container_choice_name ($container_image) container setup\33[0m
+	Status: $(docker inspect --format "{{ .State.Status }}" $container_choice)" "
+	Start/Stop the current $container_choice container process
 	Udate container configuration - restart/cpu policy
 	Backup the container with its volume data
 	Delete the container with its volume data
-	Status details about the current container
 	Open a Bash shell to the container
+	Show the debug logs of the container
   Return to menu" "    "
   if [ $ssm_line = 7 ] ;then
     container_manager
@@ -360,7 +359,8 @@ container_config(){
           2) docker start $container_choice;;
           3) docker restart $container_choice;;
           4) docker stop $container_choice;;
-        esac;;
+        esac
+        wait_enter;;
 
   		2) ssm "$container_choice configuration update
   			Select a configuration you would like to update" "
@@ -392,10 +392,10 @@ container_config(){
   			[ $ssm_line = 2 ] && docker rm -f -v $container_choice && printf "\n$container_choice ($container_choice_name) removed with its volumes\n"
         wait_enter; container_manager;;
 
-      5) printf "Available soon\n"; wait_enter;;
+  		5) docker exec -it $container_choice bash;;
 
-  		6) docker exec -it $container_choice bash;;
-
+  		6) docker logs $container_choice; wait_enter;;
+  		
       7) ;; # Return to menu
     esac
     container_config
@@ -426,12 +426,12 @@ container_manager() {
   Import a container from a tarball
   $container_list"
   container_choice=${ssm_text%% *}
-  container_choice_name=$(docker inspect --format='{{.Name}}' $container_choice)
   [ "$container_choice" = "Import" ] && printf "Write the path of your container tarball\n" && read path && docker import $path
   [ "$container_choice" = "Docker" ] && printf "\033c$(docker ps -a)" && wait_enter && container_manager
   if [ "$container_choice" = "Return" ] || [ "$container_choice" = "Container" ];then
     menu
   else
+    container_choice_name=$(docker inspect --format='{{.Name}}' $container_choice)
     container_config
     container_detection
   fi
