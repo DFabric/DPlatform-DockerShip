@@ -2,7 +2,7 @@
 
 [![DP Docker](https://raw.githubusercontent.com/DFabric/DPlatform-DockerShip/gh-pages/img/deploy-docker.png)](https://dfabric.github.io/DPlatform-DockerShip)
 
-### Try [DPlatform-DockerShell](https://github.com/DFabric/DPlatform-ShellCore) - The bare metal version of DPlatform!
+### Try [DPlatform-ShellCore](https://github.com/DFabric/DPlatform-ShellCore) - The bare metal version of DPlatform!
 
 [![DP Shell](https://raw.githubusercontent.com/DFabric/DPlatform-ShellCore/gh-pages/img/deploy.png)](https://dfabric.github.io/DPlatform-ShellCore)
 
